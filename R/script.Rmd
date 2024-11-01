@@ -1,0 +1,994 @@
+
+```{r}
+#install.packages("readxl")
+#install.packages("stringr")
+#install.packages("plyr")
+#install.packages("dplyr")
+#install.packages("sp")
+#install.packages("writexl")
+library(readxl)
+library(stringr)
+library(plyr)
+library(dplyr)
+library(sp)
+library(writexl)
+```
+
+```{r}
+PIB_2010_2015 <- read_excel("PIB dos Municípios - base de dados 2010-2015.xlsx")
+PIB_2010_2015$Ano <- as.numeric(PIB_2010_2015$Ano)
+
+instituicoes <- read.delim("Instituicoes_nova.txt")
+instituicoes$InstitutionName <- as.factor(instituicoes$InstitutionName)
+#head(instituicoes)
+#View(instituicoes)
+
+publicacoes <- read.delim("Dados_de_Publicacoes.txt")
+#View(publicacoes)
+
+subdisciplinas <- read_excel("Subdisciplinas.xlsx")
+#View(subdisciplinas)
+
+est_aux <- read_excel("est_aux.xlsx")
+#View(est_aux)
+
+
+cod_estado <- c(11,12,13,14,15,16,17,21,22,23,24,25,26,27,28,29,31,32,33,35,41,42,43,50,51,52,53)
+nome_estado <- c("Rondônia","Acre","Amazonas","Roraima","Pará","Amapá","Tocantins","Maranhão","Piauí","Ceará","Rio Grande do Norte
+","Paraíba","Pernambuco","Alagoas","Sergipe","Bahia","	
+Minas Gerais","Espírito Santo","Rio de Janeiro","São Paulo","Paraná","Santa Catarina","Rio Grande do Sul","Mato Grosso do Sul","	
+Mato Grosso","Goiás","Distrito Federal")
+```
+
+
+#2010
+```{r}
+estados2010 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2010 <- rename(estados2010,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2010[,3:15] <- 0
+#View(estados2010)
+
+#-----------------------------PIB----------------------------------#
+pib2010 <- PIB_2010_2015 %>% filter(Ano=="2010")
+#View(pib2010)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2010$Ano)) {
+    if(pib2010$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2010[i,3] <- estados2010[i,3] + pib2010[j,11]
+      estados2010[i,4] <- estados2010[i,4] + pib2010[j,12]
+      estados2010[i,5] <- estados2010[i,5] + pib2010[j,13]
+      estados2010[i,6] <- estados2010[i,6] + pib2010[j,14]
+      estados2010[i,7] <- estados2010[i,7] + pib2010[j,15]
+      estados2010[i,8] <- estados2010[i,8] + pib2010[j,16]
+      estados2010[i,9] <- estados2010[i,9] + pib2010[j,17]
+      estados2010[i,10] <- estados2010[i,10] + pib2010[j,18]
+      estados2010[i,11] <- estados2010[i,11] + pib2010[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2010 <- read_excel("RAIS_N_ESTABELECIMENTOS_2010.xlsx")
+#View(estabelecimentos2010)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2010$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2010$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2010$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2010$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2010$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2010$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2010$Município[i] <- 16
+  if(aux=="To") estabelecimentos2010$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2010$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2010$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2010$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2010$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2010$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2010$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2010$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2010$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2010$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2010$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2010$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2010$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2010$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2010$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2010$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2010$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2010$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2010$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2010$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2010$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2010 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2010[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2010 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2010$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2010$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2010$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2010 <- publicacoes %>% filter(year==2010)
+#View(publicacoes2010)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2010$id)) {
+  publicacoes2010$id_institution[i] <- str_sub(publicacoes2010$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2010 %>% filter(id_institution==cod_estado[i])
+  estados2010$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  estados2010$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+}
+
+View(estados2010)
+```
+
+#2011
+```{r}
+estados2011 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2011 <- rename(estados2011,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2011[,3:15] <- 0
+#View(estados2011)
+
+#-----------------------------PIB----------------------------------#
+pib2011 <- PIB_2010_2015 %>% filter(Ano=="2011")
+#View(pib2010)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2011$Ano)) {
+    if(pib2011$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2011[i,3] <- estados2011[i,3] + pib2011[j,11]
+      estados2011[i,4] <- estados2011[i,4] + pib2011[j,12]
+      estados2011[i,5] <- estados2011[i,5] + pib2011[j,13]
+      estados2011[i,6] <- estados2011[i,6] + pib2011[j,14]
+      estados2011[i,7] <- estados2011[i,7] + pib2011[j,15]
+      estados2011[i,8] <- estados2011[i,8] + pib2011[j,16]
+      estados2011[i,9] <- estados2011[i,9] + pib2011[j,17]
+      estados2011[i,10] <- estados2011[i,10] + pib2011[j,18]
+      estados2011[i,11] <- estados2011[i,11] + pib2011[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2011 <- read_excel("RAIS_N_ESTABELECIMENTOS_2011.xlsx")
+#View(estabelecimentos2011)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2011$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2011$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2011$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2011$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2011$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2011$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2011$Município[i] <- 16
+  if(aux=="To") estabelecimentos2011$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2011$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2011$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2011$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2011$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2011$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2011$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2011$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2011$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2011$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2011$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2011$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2011$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2011$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2011$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2011$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2011$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2011$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2011$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2011$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2011$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2011 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2011[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2011 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2011$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2011$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2011$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2011 <- publicacoes %>% filter(year==2011)
+#View(publicacoes2011)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2011$id)) {
+  publicacoes2011$id_institution[i] <- str_sub(publicacoes2011$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2011 %>% filter(id_institution==cod_estado[i])
+  estados2011$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  estados2011$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+}
+
+View(estados2011)
+```
+
+#2012
+```{r}
+estados2012 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2012 <- rename(estados2012,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2012[,3:15] <- 0
+#View(estados2012)
+
+#-----------------------------PIB----------------------------------#
+pib2012 <- PIB_2010_2015 %>% filter(Ano=="2012")
+#View(pib2012)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2012$Ano)) {
+    if(pib2012$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2012[i,3] <- estados2012[i,3] + pib2012[j,11]
+      estados2012[i,4] <- estados2012[i,4] + pib2012[j,12]
+      estados2012[i,5] <- estados2012[i,5] + pib2012[j,13]
+      estados2012[i,6] <- estados2012[i,6] + pib2012[j,14]
+      estados2012[i,7] <- estados2012[i,7] + pib2012[j,15]
+      estados2012[i,8] <- estados2012[i,8] + pib2012[j,16]
+      estados2012[i,9] <- estados2012[i,9] + pib2012[j,17]
+      estados2012[i,10] <- estados2012[i,10] + pib2012[j,18]
+      estados2012[i,11] <- estados2012[i,11] + pib2012[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2012 <- read_excel("RAIS_N_ESTABELECIMENTOS_2012.xlsx")
+#View(estabelecimentos2012)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2012$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2012$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2012$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2012$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2012$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2012$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2012$Município[i] <- 16
+  if(aux=="To") estabelecimentos2012$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2012$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2012$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2012$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2012$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2012$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2012$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2012$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2012$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2012$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2012$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2012$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2012$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2012$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2012$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2012$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2012$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2012$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2012$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2012$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2012$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2012 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2012[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2012 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2012$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2012$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2012$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2012 <- publicacoes %>% filter(year==2012)
+#View(publicacoes2012)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2012$id)) {
+  publicacoes2012$id_institution[i] <- str_sub(publicacoes2012$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2012 %>% filter(id_institution==cod_estado[i])
+  estados2012$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  estados2012$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+}
+
+View(estados2012)
+```
+
+#2013
+```{r}
+estados2013 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2013 <- rename(estados2013,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2013[,3:15] <- 0
+#View(estados2013)
+
+#-----------------------------PIB----------------------------------#
+pib2013 <- PIB_2010_2015 %>% filter(Ano=="2013")
+#View(pib2013)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2013$Ano)) {
+    if(pib2013$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2013[i,3] <- estados2013[i,3] + pib2013[j,11]
+      estados2013[i,4] <- estados2013[i,4] + pib2013[j,12]
+      estados2013[i,5] <- estados2013[i,5] + pib2013[j,13]
+      estados2013[i,6] <- estados2013[i,6] + pib2013[j,14]
+      estados2013[i,7] <- estados2013[i,7] + pib2013[j,15]
+      estados2013[i,8] <- estados2013[i,8] + pib2013[j,16]
+      estados2013[i,9] <- estados2013[i,9] + pib2013[j,17]
+      estados2013[i,10] <- estados2013[i,10] + pib2013[j,18]
+      estados2013[i,11] <- estados2013[i,11] + pib2013[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2013 <- read_excel("RAIS_N_ESTABELECIMENTOS_2013.xlsx")
+#View(estabelecimentos2013)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2013$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2013$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2013$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2013$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2013$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2013$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2013$Município[i] <- 16
+  if(aux=="To") estabelecimentos2013$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2013$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2013$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2013$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2013$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2013$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2013$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2013$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2013$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2013$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2013$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2013$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2013$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2013$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2013$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2013$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2013$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2013$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2013$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2013$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2013$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2013 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2013[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2013 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2013$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2013$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2013$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2013 <- publicacoes %>% filter(year==2013)
+#View(publicacoes2013)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2013$id)) {
+  publicacoes2013$id_institution[i] <- str_sub(publicacoes2013$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2013 %>% filter(id_institution==cod_estado[i])
+  estados2013$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  estados2013$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+}
+
+View(estados2013)
+```
+
+#2014
+```{r}
+#-------------------------------2014---------------------------------#
+estados2014 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2014 <- rename(estados2014,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2014[,3:15] <- 0
+#View(estados2014)
+
+#-----------------------------PIB----------------------------------#
+pib2014 <- PIB_2010_2015 %>% filter(Ano=="2014")
+#View(pib2014)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2014$Ano)) {
+    if(pib2014$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2014[i,3] <- estados2014[i,3] + pib2014[j,11]
+      estados2014[i,4] <- estados2014[i,4] + pib2014[j,12]
+      estados2014[i,5] <- estados2014[i,5] + pib2014[j,13]
+      estados2014[i,6] <- estados2014[i,6] + pib2014[j,14]
+      estados2014[i,7] <- estados2014[i,7] + pib2014[j,15]
+      estados2014[i,8] <- estados2014[i,8] + pib2014[j,16]
+      estados2014[i,9] <- estados2014[i,9] + pib2014[j,17]
+      estados2014[i,10] <- estados2014[i,10] + pib2014[j,18]
+      estados2014[i,11] <- estados2014[i,11] + pib2014[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2014 <- read_excel("RAIS_N_ESTABELECIMENTOS_2014.xlsx")
+#View(estabelecimentos2014)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2014$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2014$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2014$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2014$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2014$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2014$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2014$Município[i] <- 16
+  if(aux=="To") estabelecimentos2014$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2014$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2014$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2014$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2014$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2014$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2014$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2014$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2014$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2014$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2014$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2014$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2014$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2014$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2014$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2014$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2014$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2014$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2014$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2014$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2014$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2014 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2014[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2014 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2014$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2014$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2014$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2014 <- publicacoes %>% filter(year==2014)
+#View(publicacoes2014)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2014$id)) {
+  publicacoes2014$id_institution[i] <- str_sub(publicacoes2014$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2014 %>% filter(id_institution==cod_estado[i])
+  estados2014$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  if(df3$Total[1]==0){
+    estados2014$`Subdisciplina Mais Publicada`[i] <- "-"
+  }
+  else{
+    estados2014$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+  }
+}
+
+View(estados2014)
+```
+
+#2015
+```{r}
+estados2015 <- data.frame(cod_estado,nome_estado,"x1", "x2", "x3","x4", "x5", "x6", "x7", "x8", "x9","Total de Estabelecimentos", "x11","x12","x13","x14","x15")
+estados2015 <- rename(estados2015,c("Cod"="cod_estado","Estado"="nome_estado","Valor adicionado bruto da Agropecuária, a preços correntes
+(R$ 1.000)"="X.x1.","Valor adicionado bruto da Indústria, a preços correntes
+(R$ 1.000)"="X.x2.","Valor adicionado bruto dos Serviços, a preços correntes - exclusive Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x3.","Valor adicionado bruto da Administração, defesa, educação e saúde públicas e seguridade social
+(R$ 1.000)"="X.x4.","Valor adicionado bruto total, a preços correntes
+(R$ 1.000)"="X.x5.","Impostos, líquidos de subsídios, sobre produtos, a preços correntes
+(R$ 1.000)"="X.x6.","Produto Interno Bruto, a preços correntes
+(R$ 1.000)"="X.x7.","População
+(Nº de habitantes)"="X.x8.","Produto Interno Bruto per capita
+(R$ 1,00)"="X.x9.", "Total de Estabelecimentos"="X.Total.de.Estabelecimentos.", "Tipo de Estabelecimento Mais Frequente"="X.x11.","Segundo Tipo de Estabelecimento Mais Frequente"="X.x12.", "Terceiro Tipo de Estabelecimento Mais Frequente"="X.x13.", "Total de Publicacoes"="X.x14.","Subdisciplina Mais Publicada"="X.x15."))
+
+estados2015[,3:15] <- 0
+#View(estados2015)
+
+#-----------------------------PIB----------------------------------#
+pib2015 <- PIB_2010_2015 %>% filter(Ano=="2015")
+#View(pib2015)
+
+#Agregando informacoes de pib por estado
+i<-1
+while(i<=length(cod_estado)){
+  j<-1
+  while (j<=length(pib2015$Ano)) {
+    if(pib2015$`Código da Unidade da Federação`[j]==cod_estado[i]){
+      
+      estados2015[i,3] <- estados2015[i,3] + pib2015[j,11]
+      estados2015[i,4] <- estados2015[i,4] + pib2015[j,12]
+      estados2015[i,5] <- estados2015[i,5] + pib2015[j,13]
+      estados2015[i,6] <- estados2015[i,6] + pib2015[j,14]
+      estados2015[i,7] <- estados2015[i,7] + pib2015[j,15]
+      estados2015[i,8] <- estados2015[i,8] + pib2015[j,16]
+      estados2015[i,9] <- estados2015[i,9] + pib2015[j,17]
+      estados2015[i,10] <- estados2015[i,10] + pib2015[j,18]
+      estados2015[i,11] <- estados2015[i,11] + pib2015[j,19]
+    }
+    j<-j+1
+  }
+  i<-i+1
+}
+
+
+#-------------------------ESTABELECIMENTOS-------------------------#
+estabelecimentos2015 <- read_excel("RAIS_N_ESTABELECIMENTOS_2015.xlsx")
+#View(estabelecimentos2015)
+
+#manipulacao do id
+for (i in 1: length(estabelecimentos2015$Município)) {
+  aux <- str_sub(estabelecimentos_2010_2015$Município[i], start = 1, end = 2)
+  
+  if(aux=="Ro") estabelecimentos2015$Município[i] <- 11
+  if(aux=="Ac") estabelecimentos2015$Município[i] <- 12
+  if(aux=="Am") estabelecimentos2015$Município[i] <- 13
+  if(aux=="Rr") estabelecimentos2015$Município[i] <- 14
+  if(aux=="Pa") estabelecimentos2015$Município[i] <- 15
+  if(aux=="Ap") estabelecimentos2015$Município[i] <- 16
+  if(aux=="To") estabelecimentos2015$Município[i] <- 17
+  if(aux=="Ma") estabelecimentos2015$Município[i] <- 21
+  if(aux=="Pi") estabelecimentos2015$Município[i] <- 22
+  if(aux=="Ce") estabelecimentos2015$Município[i] <- 23
+  if(aux=="Rn") estabelecimentos2015$Município[i] <- 24
+  if(aux=="Pb") estabelecimentos2015$Município[i] <- 25
+  if(aux=="Pe") estabelecimentos2015$Município[i] <- 26
+  if(aux=="Al") estabelecimentos2015$Município[i] <- 27
+  if(aux=="Se") estabelecimentos2015$Município[i] <- 28
+  if(aux=="Ba") estabelecimentos2015$Município[i] <- 29
+  if(aux=="Mg") estabelecimentos2015$Município[i] <- 31
+  if(aux=="Es") estabelecimentos2015$Município[i] <- 32
+  if(aux=="Rj") estabelecimentos2015$Município[i] <- 33
+  if(aux=="Sp") estabelecimentos2015$Município[i] <- 35
+  if(aux=="Pr") estabelecimentos2015$Município[i] <- 41
+  if(aux=="Sc") estabelecimentos2015$Município[i] <- 42
+  if(aux=="Rs") estabelecimentos2015$Município[i] <- 43
+  if(aux=="Ms") estabelecimentos2015$Município[i] <- 50
+  if(aux=="Mt") estabelecimentos2015$Município[i] <- 51
+  if(aux=="Go") estabelecimentos2015$Município[i] <- 52
+  if(aux=="Df") estabelecimentos2015$Município[i] <- 53
+}
+
+#Contando total por Estado
+df <- data.frame()
+for (i in 1:length(cod_estado)) {
+  df <- estabelecimentos2015 %>% filter(Município==cod_estado[i])
+  x <- sum(df$Total)
+  estados2015[i,12] <- x
+}
+
+#identificacao do tipo de estabelecimento mais frequente
+for (i in 1: length(cod_estado)) {
+  est_aux[,2] <-0
+  df <- data.frame()
+  df <- estabelecimentos2015 %>% filter(Município==cod_estado[i])
+  
+  j<-2
+  mf_est <- est_aux[1:3,]
+  while (j<=286) {
+      est_aux$Total[j] <- sum(df[,j])
+    if(est_aux$Total[j] > mf_est$Total[1]){
+      mf_est[1,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[2] && est_aux$Total[j] < mf_est$Total[1]){
+      mf_est[2,] <- est_aux[j,]
+    }
+    if(est_aux$Total[j] > mf_est$Total[3] && est_aux$Total[j] < mf_est$Total[2]){
+      mf_est[3,] <- est_aux[j,]
+    }
+    j<-j+1
+  }
+  estados2015$`Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[1]
+  estados2015$`Segundo Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[2]
+  estados2015$`Terceiro Tipo de Estabelecimento Mais Frequente`[i] <- mf_est$Tipo[3]
+}
+
+#--------------------------Publicacoes-----------------------------#
+publicacoes2015 <- publicacoes %>% filter(year==2015)
+#View(publicacoes2015)
+
+sub_aux <- data.frame()
+sub_aux <- data.frame(subdisciplinas$subd_id,subdisciplinas$subd_name,"Total")
+sub_aux <- rename(sub_aux,c("Id"="subdisciplinas.subd_id", "Nome"="subdisciplinas.subd_name", "Total"="X.Total."))
+sub_aux$Total <- 0
+
+#manipulacao do id para facilitar contagem
+for (i in 1: length(publicacoes2015$id)) {
+  publicacoes2015$id_institution[i] <- str_sub(publicacoes2015$id_institution[i], start = -2, end = -1)
+}
+
+#Contagem de publicacoes e subdisciplina mais frequente
+for (i in 1: length(cod_estado)) {
+  sub_aux$Total <- 0
+  df <- data.frame()
+  df <-publicacoes2015 %>% filter(id_institution==cod_estado[i])
+  estados2015$`Total de Publicacoes`[i] <- length(df$id)
+  
+  for (j in 1: length(sub_aux$Id)) {
+    
+    df2 <- data.frame()
+    df2 <- df %>% filter(sub.discipline==sub_aux$Id[j])
+    sub_aux$Total[j] <- length(df2$id)
+  }
+  
+  df3 <- sub_aux[1,]
+  for (k in 1: length(sub_aux$Id)) {
+    if(df3$Total<sub_aux$Total[k]){
+      df3 <- sub_aux[k,]
+    }
+  }
+  
+  estados2015$`Subdisciplina Mais Publicada`[i] <- df3$Nome
+}
+
+View(estados2015)
+```
+
+```{r}
+#write_xlsx(estados2010, path = "C:/Users/Eduardo/Documents/estados2010.xlsx")
+#write_xlsx(estados2011, path = "C:/Users/Eduardo/Documents/estados2011.xlsx")
+#write_xlsx(estados2012, path = "C:/Users/Eduardo/Documents/estados2012.xlsx")
+#write_xlsx(estados2013, path = "C:/Users/Eduardo/Documents/estados2013.xlsx")
+#write_xlsx(estados2014, path = "C:/Users/Eduardo/Documents/estados2014.xlsx")
+#write_xlsx(estados2015, path = "C:/Users/Eduardo/Documents/estados2015.xlsx")
+```
+
